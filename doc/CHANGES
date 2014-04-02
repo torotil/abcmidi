@@ -10131,3 +10131,162 @@ was changed to "track x is .... quarter notes long instead of ..."
 The change is was made in writetrack() in genmidi.c.
 
 
+
+December 25 2013
+abc2midi bug: abc2midi does not read customstress files correctly
+using the -CSM option.
+
+The following file containing
+
+Lesnoto
+7/8
+7 7
+110 1.3
+90  1.0
+80  0.7
+100 1.2
+90  0.8
+100 1.2
+90  0.8
+
+is not read correctly. Neither the name Lesnoto or the meter is stored
+in the stresspat structure.
+
+Analysis: in the function read_custom_stress_file() in stresspat.c
+the lines
+stresspat[index].name = name;
+stresspat[index].meter = meter;
+
+copy the address instead of the contents of string arrays name and
+meter. The lines should read
+strcpy(stresspat[index].name,name); /* [RZ] 2013-12-25 */
+strcpy(stresspat[index].meter, meter); /* [RZ] 2013-12-25 */
+
+also gain and expand are not copied into the structures.
+add
+stresspat[index].vel[i] = gain; /* [RZ] 2013-12-25 */
+stresspat[index].expcoef[i] = expand; /* [RZ] 2013-12-25 */
+
+I am grateful to roman.zimmermann@gmx.at for identifying the
+bug and providing the fix.
+
+
+
+January 01 2014
+
+Abcmatch: fixed matchsup.c so it catches only the first title
+of a tune in case that it has alternate titles.
+
+
+January 05 2014
+
+Midiabc: bug the msb and lsb values were interchanged in mftext_pitchbend.
+mftext_pitchbend now also returns the value of bend in MIDI units.
+
+
+January 06-09 2014
+abc2midi new feaure: introducing an option to provide microtone tuning
+in the key signature  for example K:F ^1/2D besides flattening
+B also flattens D's by a half a semitone.
+  
+Implementation includes changes to parsekey in parseabc.c which
+now has to check for microtones in the list of notes following
+the key signature.  A new parameter modmicrotone is introduced in the
+function event_key() which is found in parseabc.c, store.c, yapstree.c,
+toabc.c and matchsup.c. A new struct 'fraction' was added in parseabc.h.
+In store.c altermap() has a new parameter struct modmic[7], which
+is used to transfer the key signature microtone specifications from
+modmicrotone in event_key to a new struct in the voice struct called
+basmic[7]. v->basmic stores the key signature microtone specs if present.
+Function newvoice in store.c transfers global->basemic to v->basemic.
+Function pitchof_b in store.c checks v->basemic to see if the note
+has a microtone defined in the key signature. parsenote in parseabc.c resets
+microtone to 0 (through event_normal_tone()) if the note is not a microtone.
+This is a lot of changes. I hope, I have not introduced new bugs.
+
+If a microtone is detected by parsenote(), its parameters are
+stored in the struct fraction setmicrotone. This struct is automatically
+reset to 0,0 if no microtone is detected.
+
+
+January 12 2014
+
+abc2midi new feature: Makam style music (Turkish) uses a more
+complex music scale (as opposed to the equal temperament scale).
+The comma53 scale divides an octave into 53 microtones. To use
+this scale put "%%MIDI tuningsystem comma53" in your abc file.
+
+Implementation: added to new functions in store.c
+init_p48toc53 initializes the array pt48toc[]. convert_to_comma53()
+changes midipitch and midibend values. Added a new command,
+%%MIDI tuningsystem comma53
+
+January 14 2014
+
+corrections to convert_to_comma53(). Some debugging #defs.
+
+January 16 2014
+
+some fixes to pitchof_b and parsekey.
+
+January 20 2014
+
+abc2midi: microtones now propagate across a bar just like accidentals.
+Major modifications to pitchof_b and other minor fixes (in store.c) were made.
+
+January 26 2014
+abc2midi: more microtone bug fixes. Each octave can hold its own
+microtones. i.e. v->workmic is now a two dimensional array just
+like workmap and workmul.
+
+
+
+February 05 2014
+
+abc2midi: the following file causes abc2midi (and other programs) to
+behave erratically.
+
+X:9
+T:Have you ever wondered?
+L:1/8
+M:4/4
+Q:1/2=90
+K:G
+V:1
+CDEF |
+W:| Have you ever | wondered why the | girls do | skipping, and the
+W:| boys play | football and the | grans do | knitting?
+W:| Who made the | rules that the | people all o- | bey?  And
+W:| What's with the | "girls' thing", | "boys' thing" | anyway?
+
+X:10
+T:Warm-up 1
+L:1/4
+M:2/2
+Q:1/2=80
+K:Bb
+|[B,DFB]2z2 |
+
+abc2midi returns the message
+Warning in line 9 : Potentially ambiguous line.
+Warning in line 9 : Ignoring reserved character W
+Error in line 9 : Unrecognized character: o
+Error in line 9 : Malformed note : expecting a-g or A-G
+Error in line 9 : Unrecognized character: r
+Error in line 9 : Unrecognized character: w
+Error in line 9 : Unrecognized character: o
+Error in line 9 : Unrecognized character: n
+and many more messages
+
+Analysis: abc2midi sees :| after the W and assumes it is an end
+repeat in the body. It tries to treat the rest of the line like
+music.
+
+Fix: I have improved the warning in parseabc.c so it is more meaningful.
+It is now
+Warning in line 9 : Potentially ambiguous line - either a :| repeat or a field command -- cannot distinguish.
+
+This applies to all programs, yaps, abc2abc etc but it is too much trouble
+to give them new version numbers.
+
+

@@ -543,8 +543,8 @@ read_custom_stress_file (char *filename)
       (char *) checkmalloc ((strlen (name) + 1) * sizeof (char));
       stresspat[index].meter =
       (char *) checkmalloc ((strlen (meter) + 1) * sizeof (char));
-      strcpy(stresspat[index].name, name);
-      strcpy(stresspat[index].meter, meter);
+      strcpy(stresspat[index].name, name); /* [RZ] 2013-12-25 */
+      strcpy(stresspat[index].meter, meter); /* [RZ] 2013-12-25 */
     }
     
     stresspat[index].nseg = nseg;
@@ -556,8 +556,8 @@ read_custom_stress_file (char *filename)
       if (j != 2) exit(1);
       if (feof (inhandle))
         break;
-      stresspat[index].vel[i] = gain;
-      stresspat[index].expcoef[i] = expand;
+      stresspat[index].vel[i] = gain;      /* [RZ] 2013-12-25 */
+      stresspat[index].expcoef[i] = expand; /* [RZ] 2013-12-25 */
     }
     fgets (str, 3, inhandle);
   }
