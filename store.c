@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.25 February 05 2014"
+#define VERSION "3.26 April 03 2014"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -5235,7 +5235,8 @@ static void finishfile()
       printf("handling grace notes\n");
     };
     dograce();
-    tiefix();
+    if (barflymode) apply_bf_stress_factors (); /* [SS] 2011-08-24 */ 
+    tiefix(); /* [SS] 2014-04-03 */
     if ((parts == -1) && (voicecount == 1)) {
       if (verbose > 1) {
         printf("fixing repeats\n");
@@ -5243,7 +5244,6 @@ static void finishfile()
       fixreps();
     };
 
-    if (barflymode) apply_bf_stress_factors (); /* [SS] 2011-08-24 */ 
  
     expand_ornaments();
     if (parts >= 0) fix_part_start(); /* [SS] 2012-12-25 */
